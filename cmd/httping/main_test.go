@@ -34,3 +34,7 @@ func TestMain(m *testing.M) {
 
 	os.Exit(resultCode)
 }
+
+func TestRun(t *testing.T) {
+
+}

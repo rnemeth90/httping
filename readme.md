@@ -16,7 +16,10 @@ Or download the latest release [here](https://github.com/rnemeth90/httping/relea
 If you need help, submit an issue
 
 ## To Do
-- [ ]
+- [ ] add tests
+- [ ] add colors
+- [ ] add concurrency
+- [ ] finish readme
 
 ## Version History
 * 0.1
