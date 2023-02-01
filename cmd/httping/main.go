@@ -69,6 +69,7 @@ func main() {
 func run(c config, writer io.Writer) error {
 	var count int
 
+	// check if the writer is a tabwriter
 	tw, ok := writer.(*tabwriter.Writer)
 
 	// tw := tabwriter.NewWriter(os.Stdout, 0, 8, 1, '\t', tabwriter.AlignRight)
@@ -91,13 +92,11 @@ func run(c config, writer io.Writer) error {
 			return err
 		}
 
-		s := response.Status
-		l := response.Latency
 
 		headerValues := httping.ParseMap(&response.ResponseHeaders)
 
 		hs := *headerValues
-		fmt.Fprintf(writer, "[ %v ]\t[ %d ]\t[ %s ]\t[ %s ]\t[ %dms ]\t[ %s ]\n", time.Now().Format(time.RFC3339), i, c.url, s, l, hs)
+		fmt.Fprintf(writer, "[ %v ]\t[ %d ]\t[ %s ]\t[ %s ]\t[ %dms ]\t[ %s ]\n", time.Now().Format(time.RFC3339), i, c.url, response.Status, response.Latency, hs)
 		count++
 
 		if ok {
