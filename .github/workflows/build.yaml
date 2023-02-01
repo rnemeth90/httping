@@ -1,0 +1,93 @@
+name: build-release-binary
+
+run-name: Create Github Release for GoLang binary
+
+on:
+  push:
+    #branches:
+    #- main
+    tags:
+    - 'r*'
+
+jobs:
+
+  build:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+
+    steps:
+
+    # debug
+    - name: Dump env
+      run: env | sort
+    - name: Dump GitHub context
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+      run: echo "$GITHUB_CONTEXT"
+
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0 # get all tags, needed to get git log
+        ref: main
+
+    # Go environment
+    - name: setup Go Lang
+      id: build
+      uses: actions/setup-go@v3
+      with:
+        go-version: '^1.19.2'
+    - run: |
+        go version
+        cd ./cmd/httping/
+        ls -lisa
+        if [ ! -e *.mod ]; then
+          go mod init ${GITHUB_REPOSITORY}
+        fi
+        go mod tidy
+        go build -o httping -ldflags "-X main.Version=${GITHUB_REF_NAME} -X main.BuiltBy=github-actions" main.go
+        mv httping builds/
+        ls -lisa builds/
+
+    - run: git version
+    - run: git branch
+    - run: git tag
+
+    - name: get semantic tag version and release notes from commit messages
+      id: tag
+      run: |
+        currentTag=${GITHUB_REF_NAME}
+        major_minor=$(echo "$currentTag" | cut -d'.' -f1-2)
+        patch=$currentTag
+        # avoid empty patch number
+        [ -n "$patch" ] && ((patch--)) || patch=".x"
+        previousTag="${major_minor}.${patch}"
+
+        echo "" > body.log
+        if git tag | grep $previousTag ; then
+          git log -q ${currentTag}...${previousTag} --pretty="- %s" -q --no-color >> body.log
+        else
+          git log --pretty="- %s" -q --no-color >> body.log
+        fi
+        line_count=$(cat body.log | wc -l)
+
+        echo "currentTag=$currentTag" >> $GITHUB_OUTPUT
+        echo "previousTag=$previousTag" >> $GITHUB_OUTPUT
+        echo "line_count=$line_count" >> $GITHUB_OUTPUT
+
+    - run: echo currentTag is ${{ steps.tag.outputs.currentTag }}
+    - run: echo previousTag is ${{ steps.tag.outputs.previousTag }}
+    - run: echo line_count is ${{ steps.tag.outputs.line_count }}
+    - run: cat body.log
+
+    #  create Github release with release note from file and binary asset attached
+    - uses: ncipollo/release-action@v1
+      with:
+        name: ${{ env.GITHUB_REF_NAME }}
+        tag: ${{ env.GITHUB_REF_NAME }}
+        artifacts: httping
+        bodyFile: "body.log"
+        token: ${{ secrets.GITHUB_TOKEN }}
+        removeArtifacts: true
+        allowUpdates: "true"
+
