@@ -78,13 +78,15 @@ func run(c config, writer io.Writer) error {
 	fmt.Fprintln(writer, "Time\tCount\tUrl\tResult\tTime\tHeaders")
 	fmt.Fprintln(writer, "-----\t-----\t---\t------\t----\t-------")
 
+	// handle the user terminating prematurely
 	osChan := make(chan os.Signal)
 	signal.Notify(osChan, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-osChan
 		fmt.Println()
+		stats := httping.CalculateStatistics(respForStats)
 		fmt.Printf("Total Requests: %d\n", count)
-		// print some statistics
+		printStatistics(stats)
 		os.Exit(0)
 	}()
 
@@ -106,6 +108,18 @@ func run(c config, writer io.Writer) error {
 		}
 	}
 
-	httping.CalculateStatistics(respForStats)
+	stats := httping.CalculateStatistics(respForStats)
+	fmt.Printf("Total Requests: %d\n", count)
+	printStatistics(stats)
 	return nil
+}
+
+// this should be moved into the httping package
+func printStatistics(stats *httping.HttpStatistics){
+	fmt.Printf("AverageLatency: %d\n", stats.AverageLatency)
+	fmt.Printf("Count of 200s: %d\n", stats.Count200)
+	fmt.Printf("Count of 300s: %d\n", stats.Count300)
+	fmt.Printf("Count of 400s: %d\n", stats.Count400)
+	fmt.Printf("Count of 500s: %d\n", stats.Count500)
+	fmt.Printf("Count of others: %d\n",stats.Other)
 }

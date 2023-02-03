@@ -15,6 +15,14 @@ type HttpResponse struct {
 	Latency         int64
 }
 
+type HttpStatistics struct {
+	Count200 			 int
+	Count300 			 int
+	Count400 			 int
+	Count500 			 int
+	Other 				 int
+	AverageLatency int64
+}
 
 // ParseURL will parse a URL from a string
 func ParseURL(url string, useHTTP bool) string {
@@ -60,7 +68,7 @@ func MakeRequest(url, headers string) (*HttpResponse, error) {
 	return result, nil
 }
 
-func ParseMap(m *map[string]string) *string {
+func ParseHeader(m *map[string]string) *string {
 	var result string
 	for k, v := range *m {
 		// just making the output pretty
@@ -71,4 +79,29 @@ func ParseMap(m *map[string]string) *string {
 		}
 	}
 	return &result
+}
+
+func CalculateStatistics(responses []*HttpResponse) *HttpStatistics {
+	var stats HttpStatistics
+	var totalLatency int64
+
+	for _, l := range responses {
+		totalLatency += l.Latency
+
+		switch strings.Trim(l.Status,"\n") {
+		case "200 OK":
+			stats.Count200++
+		case "300":
+			stats.Count300++
+		case "400":
+			stats.Count400++
+		case "500":
+			stats.Count500++
+		default:
+			stats.Other++
+		}
+	}
+	stats.AverageLatency = totalLatency / int64(len(responses))
+
+	return &stats
 }
