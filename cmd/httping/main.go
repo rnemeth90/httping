@@ -14,16 +14,16 @@ import (
 )
 
 type config struct {
-	url string
+	url     string
 	useHTTP bool
-	count int
+	count   int
 	headers string
 }
 
-var(
-	url string
+var (
+	url     string
 	useHTTP bool
-	co int
+	co      int
 	headers string
 )
 
@@ -52,10 +52,10 @@ func main() {
 
 	url = httping.ParseURL(url, useHTTP)
 
-	c := config {
-		url: url,
+	c := config{
+		url:     url,
 		useHTTP: useHTTP,
-		count: co,
+		count:   co,
 		headers: headers,
 	}
 
@@ -86,7 +86,7 @@ func run(c config, writer io.Writer) error {
 		fmt.Println()
 		stats := httping.CalculateStatistics(respForStats)
 		fmt.Printf("Total Requests: %d\n", count)
-		printStatistics(stats)
+		fmt.Println(stats.String())
 		os.Exit(0)
 	}()
 
@@ -100,7 +100,7 @@ func run(c config, writer io.Writer) error {
 		headerValues := httping.ParseHeader(&response.ResponseHeaders)
 
 		hs := *headerValues
-		fmt.Fprintf(writer, "[ %v ]\t[ %d ]\t[ %s ]\t[ %s ]\t[ %dms ]\t[ %s ]\n", time.Now().Format(time.RFC3339), i, c.url, response.Status, response.Latency, hs)
+		fmt.Fprintf(writer, "[ %v ]\t[ %d ]\t[ %s ]\t[ %d ]\t[ %dms ]\t[ %s ]\n", time.Now().Format(time.RFC3339), i, c.url, response.Status, response.Latency, hs)
 		count++
 
 		if ok {
@@ -109,17 +109,8 @@ func run(c config, writer io.Writer) error {
 	}
 
 	stats := httping.CalculateStatistics(respForStats)
+	fmt.Println()
 	fmt.Printf("Total Requests: %d\n", count)
-	printStatistics(stats)
+	fmt.Println(stats.String())
 	return nil
-}
-
-// this should be moved into the httping package
-func printStatistics(stats *httping.HttpStatistics){
-	fmt.Printf("AverageLatency: %d\n", stats.AverageLatency)
-	fmt.Printf("Count of 200s: %d\n", stats.Count200)
-	fmt.Printf("Count of 300s: %d\n", stats.Count300)
-	fmt.Printf("Count of 400s: %d\n", stats.Count400)
-	fmt.Printf("Count of 500s: %d\n", stats.Count500)
-	fmt.Printf("Count of others: %d\n",stats.Other)
 }
