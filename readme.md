@@ -17,13 +17,14 @@ If you need help, submit an issue
 
 ## To Do
 - [x] replace flag with pflag
-- [ ] add statistics
+- [x] add statistics
+- [x] add stringer for httpstatistics
 - [ ] add tests
 - [ ] add colors
 - [ ] finish readme
 
 ## Version History
-* 0.1
+* 1.0.0
     * Initial Release
 
 ## License
