@@ -79,7 +79,7 @@ func run(c config, writer io.Writer) error {
 	fmt.Fprintln(writer, "-----\t-----\t---\t------\t----\t-------")
 
 	// handle the user terminating prematurely
-	osChan := make(chan os.Signal)
+	osChan := make(chan os.Signal, 1)
 	signal.Notify(osChan, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-osChan
