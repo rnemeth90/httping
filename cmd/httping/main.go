@@ -32,6 +32,7 @@ func init() {
 	pflag.BoolVar(&useHTTP, "insecure", false, "use http instead of https")
 	pflag.StringVar(&headers, "headers", "", "comma delimited list of response headers to output")
 	pflag.IntVar(&co, "c", 4, "number of pings to send")
+	pflag.ErrHelp = nil
 	pflag.Usage = usage
 }
 
@@ -40,8 +41,8 @@ func usage() {
 
 	fmt.Println()
 	fmt.Println("Usage:")
-	fmt.Printf("  httping --url www.google.com\n\n")
-	fmt.Printf("  httping --url www.google.com --c 100 --headers server")
+	fmt.Printf("  httping --url www.google.com\n")
+	fmt.Printf("  httping --url www.google.com --c 100 --headers server\n\n")
 
 	fmt.Println("Options:")
 	pflag.PrintDefaults()
@@ -50,7 +51,12 @@ func usage() {
 func main() {
 	pflag.Parse()
 
-	url = httping.ParseURL(url, useHTTP)
+	osArgFlags := pflag.Args()
+	if len(osArgFlags) > 0 {
+		url = httping.ParseURL(os.Args[1], useHTTP)
+	} else {
+		url = httping.ParseURL(url, useHTTP)
+	}
 
 	c := config{
 		url:     url,

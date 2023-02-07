@@ -20,8 +20,8 @@ If you need help, submit an issue
 - [x] add statistics
 - [x] add stringer for httpstatistics
 - [ ] add tests
-- [ ] add colors
 - [ ] finish readme
+- [x] allow host to be input as arg 1
 
 ## Version History
 * 1.0.0
