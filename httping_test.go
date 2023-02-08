@@ -61,3 +61,13 @@ func TestParseHeader(t *testing.T) {
 		})
 	}
 }
+
+func TestCalculateStatistics(t *testing.T) {
+	testCases := []struct{
+		name string
+		responses []httping.HttpResponse
+		expect httping.HTTPStatistics
+	}{
+		{"Test200s",responses: []httping.HttpResponse{}, expect: httping.HTTPStatistics{}},
+	}
+}
