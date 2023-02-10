@@ -16,6 +16,7 @@ jobs:
     permissions:
       contents: write
 
+
     steps:
 
     # debug
@@ -48,7 +49,14 @@ jobs:
         go mod tidy
         go build -o httping -ldflags "-X main.Version=${GITHUB_REF_NAME} -X main.BuiltBy=github-actions" main.go
         mv httping builds/
-        ls -lisa builds/
+        ls -lisa builds
+
+    - name: go test
+      id: test
+      run: |
+        go test -v
+        cd ./cmd/httping/
+        go test -v
 
     - run: git version
     - run: git branch
@@ -59,7 +67,7 @@ jobs:
       run: |
         currentTag=${GITHUB_REF_NAME}
         major_minor=$(echo "$currentTag" | cut -d'.' -f1-2)
-        patch=$currentTag
+        patch=$(echo "$currentTag" | cut -d'.' -f3)
         # avoid empty patch number
         [ -n "$patch" ] && ((patch--)) || patch=".x"
         previousTag="${major_minor}.${patch}"
@@ -86,8 +94,10 @@ jobs:
       with:
         name: ${{ env.GITHUB_REF_NAME }}
         tag: ${{ env.GITHUB_REF_NAME }}
-        artifacts: ./cmd/hashy/builds/httping
+        artifacts: ./cmd/httping/builds/httping
         bodyFile: "body.log"
         token: ${{ secrets.GITHUB_TOKEN }}
         removeArtifacts: true
         allowUpdates: "true"
+
+
