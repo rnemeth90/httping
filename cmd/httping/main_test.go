@@ -1,4 +1,4 @@
-package main_test
+package main
 
 import (
 	"fmt"
@@ -33,8 +33,4 @@ func TestMain(m *testing.M) {
 	os.Remove(binName)
 
 	os.Exit(resultCode)
-}
-
-func TestRun(t *testing.T) {
-
 }
