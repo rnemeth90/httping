@@ -86,9 +86,8 @@ jobs:
       with:
         name: ${{ env.GITHUB_REF_NAME }}
         tag: ${{ env.GITHUB_REF_NAME }}
-        artifacts: httping
+        artifacts: ./cmd/hashy/builds/httping
         bodyFile: "body.log"
         token: ${{ secrets.GITHUB_TOKEN }}
         removeArtifacts: true
         allowUpdates: "true"
-
