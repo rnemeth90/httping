@@ -40,6 +40,7 @@ jobs:
     - run: |
         go version
         cd ./cmd/httping/
+        mkdir builds
         ls -lisa
         if [ ! -e *.mod ]; then
           go mod init ${GITHUB_REPOSITORY}
