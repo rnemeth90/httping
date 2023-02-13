@@ -72,7 +72,6 @@ If you need help or have suggestions/feature requests, please submit an issue.
 - [x] add tests
 - [x] finish readme
 - [x] allow host to be input as arg 1
-- [ ] infinite pings unless count is specified
 - [ ] add delay to pings
 
 

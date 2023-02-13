@@ -25,13 +25,15 @@ var (
 	useHTTP bool
 	co      int
 	headers string
+	sleep   int64
 )
 
 func init() {
 	pflag.StringVar(&url, "url", "", "the url to ping")
 	pflag.BoolVar(&useHTTP, "insecure", false, "use http instead of https")
 	pflag.StringVar(&headers, "headers", "", "comma delimited list of response headers to output")
-	pflag.IntVar(&co, "c", 4, "number of pings to send")
+	pflag.IntVar(&co, "count", 4, "number of pings to send")
+	pflag.Int64Var(&sleep, "sleep", 0, "number of seconds to sleep between requests")
 	pflag.ErrHelp = nil
 	pflag.Usage = usage
 }
@@ -42,6 +44,7 @@ func usage() {
 	fmt.Println()
 	fmt.Println("Usage:")
 	fmt.Printf("  httping --url www.google.com\n")
+	fmt.Printf("  httping --url www.google.com --sleep 10\n")
 	fmt.Printf("  httping --url www.google.com --c 100 --headers server\n\n")
 
 	fmt.Println("Options:")
@@ -112,6 +115,7 @@ func run(c config, writer io.Writer) error {
 		if ok {
 			tw.Flush()
 		}
+		time.Sleep(time.Second * time.Duration(sleep))
 	}
 
 	stats := httping.CalculateStatistics(respForStats)
