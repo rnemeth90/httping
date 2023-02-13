@@ -24,14 +24,14 @@ gh_bin=$(which gh)
 if git tag --sort=committerdate | grep -q ^r; then
 
   # get latest semantic version tag, construct patch+1
-  semantic_version=$(git tag --sort=-committerdate | grep ^r | grep -Po '^r[0-9]*.[0-9]*.[0-9]*' | head -n1)
+  semantic_version=$(git tag --sort=-committerdate | grep ^r | grep -Po 'r[0-9]*.[0-9]*.[0-9]*' | head -n1)
   [ -n "$semantic_version" ] || {
     echo "ERROR could not find semantic version rX.Y.Z"
     exit 3
   }
 
-  major_minor=$(echo "" | cut -d'.' -f1-2)
-  patch=$semantic_version
+  major_minor=$(echo "$semantic_version" | cut -d'.' -f1-2)
+  patch=$(echo "$semantic_version" | cut -d'.' -f3)
   ((patch++))
   newtag="${major_minor}.${patch}"
 else
