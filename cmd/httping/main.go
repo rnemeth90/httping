@@ -29,23 +29,24 @@ var (
 )
 
 func init() {
-	pflag.StringVar(&url, "url", "", "the url to ping")
-	pflag.BoolVar(&useHTTP, "insecure", false, "use http instead of https")
-	pflag.StringVar(&headers, "headers", "", "comma delimited list of response headers to output")
-	pflag.IntVar(&co, "count", 4, "number of pings to send")
-	pflag.Int64Var(&sleep, "sleep", 0, "number of seconds to sleep between requests")
+	pflag.StringVar(&url, "url", "", "Specify the URL to ping. (required)")
+	pflag.BoolVar(&useHTTP, "insecure", false, "Use HTTP instead of HTTPS. By default, HTTPS is used.")
+	pflag.StringVar(&headers, "headers", "", "A comma-separated list of response headers to include in the output.")
+	pflag.IntVar(&co, "count", 4, "Set the number of pings to send. Default is 4.")
+	pflag.Int64Var(&sleep, "sleep", 0, "Set the delay (in seconds) between successive pings. Default is 0 (no delay).")
 	pflag.ErrHelp = nil
 	pflag.Usage = usage
 }
 
 func usage() {
-	fmt.Println(os.Args[0])
-
-	fmt.Println()
-	fmt.Println("Usage:")
-	fmt.Printf("  httping --url www.google.com\n")
-	fmt.Printf("  httping --url www.google.com --sleep 10\n")
-	fmt.Printf("  httping --url www.google.com --c 100 --headers server\n\n")
+	fmt.Println("httping: A tool to 'ping' a web server and display response statistics.")
+	fmt.Println("\nUsage:")
+	fmt.Println("  httping [OPTIONS] --url URL")
+	fmt.Println("\nExamples:")
+	fmt.Println("  httping --url www.google.com")
+	fmt.Println("  httping --url www.google.com --insecure --count 10")
+	fmt.Println("  httping --url www.google.com --count 100 --headers Content-Type,Server")
+	fmt.Println("  httping --url www.google.com --sleep 10")
 
 	fmt.Println("Options:")
 	pflag.PrintDefaults()
@@ -100,7 +101,7 @@ func run(c config, writer io.Writer) error {
 	}()
 
 	for i := 1; i <= c.count; i++ {
-		response, err := httping.MakeRequest(c.url, c.headers)
+		response, err := httping.MakeRequest(c.useHTTP, c.url, c.headers)
 		if err != nil {
 			return err
 		}

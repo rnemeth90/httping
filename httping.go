@@ -1,9 +1,9 @@
 package httping
 
 import (
-	"bytes"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -53,26 +53,43 @@ func ParseURL(url string, useHTTP bool) string {
 }
 
 // MakeRequest performs an HTTP request
-func MakeRequest(url, headers string) (*HttpResponse, error) {
+func MakeRequest(useHTTP bool, url, headers string) (*HttpResponse, error) {
 	var result *HttpResponse
+	userAgent := "httping"
 
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	tr := &http.Transport{}
+	if !useHTTP {
+		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: false}
 	}
 
 	client := &http.Client{Transport: tr}
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("user-agent", userAgent)
+
 	start := time.Now()
-	response, err := client.Get(url)
+	response, err := client.Do(req)
 	end := time.Since(start).Milliseconds()
 	if err != nil {
-		return &HttpResponse{}, err
+		return nil, err
 	}
-	defer response.Body.Close()
+
+	defer func() {
+		io.Copy(io.Discard, response.Body)
+		response.Body.Close()
+	}()
 
 	h := make(map[string]string)
 	responseHeaders := strings.Split(headers, ",")
-	for _, header := range responseHeaders {
-		h[header] = response.Header.Get(header)
+
+	if len(responseHeaders) > 0 {
+		for _, header := range responseHeaders {
+			h[header] = response.Header.Get(header)
+		}
 	}
 
 	result = &HttpResponse{
@@ -81,6 +98,7 @@ func MakeRequest(url, headers string) (*HttpResponse, error) {
 		ResponseHeaders: h,
 		Latency:         end,
 	}
+
 	return result, nil
 }
 
@@ -101,86 +119,81 @@ func CalculateStatistics(responses []*HttpResponse) *HTTPStatistics {
 	var stats HTTPStatistics
 	var totalLatency int64
 
-	for _, l := range responses {
-		totalLatency += l.Latency
+	statusCodeCounts := make(map[int]int)
 
-		switch l.Status {
-		case 200:
-			stats.Count200++
-		case 201:
-			stats.Count201++
-		case 204:
-			stats.Count204++
-		case 301:
-			stats.Count301++
-		case 302:
-			stats.Count302++
-		case 304:
-			stats.Count304++
-		case 400:
-			stats.Count400++
-		case 401:
-			stats.Count401++
-		case 403:
-			stats.Count403++
-		case 404:
-			stats.Count404++
-		case 500:
-			stats.Count500++
-		case 502:
-			stats.Count502++
-		case 503:
-			stats.Count503++
-		case 504:
-			stats.Count504++
+	for _, response := range responses {
+		totalLatency += response.Latency
+		statusCodeCounts[response.Status]++
+
+		if response.Latency > stats.MaxLatency {
+			stats.MaxLatency = response.Latency
+		}
+		if stats.MinLatency == 0 || response.Latency < stats.MinLatency {
+			stats.MinLatency = response.Latency
+		}
+	}
+
+	stats.Count200 = statusCodeCounts[200]
+	stats.Count201 = statusCodeCounts[201]
+	stats.Count204 = statusCodeCounts[204]
+	stats.Count301 = statusCodeCounts[301]
+	stats.Count302 = statusCodeCounts[302]
+	stats.Count304 = statusCodeCounts[304]
+	stats.Count400 = statusCodeCounts[400]
+	stats.Count401 = statusCodeCounts[401]
+	stats.Count403 = statusCodeCounts[403]
+	stats.Count404 = statusCodeCounts[404]
+	stats.Count500 = statusCodeCounts[500]
+	stats.Count502 = statusCodeCounts[502]
+	stats.Count503 = statusCodeCounts[503]
+	stats.Count504 = statusCodeCounts[504]
+	stats.Other = 0
+
+	for code, count := range statusCodeCounts {
+		switch code {
+		case 200, 201, 204, 301, 302, 304, 400, 401, 403, 404, 500, 502, 503, 504:
 		default:
-			stats.Other++
-		}
-	}
-
-	var max int64
-	for i, v := range responses {
-		if i == 0 || v.Latency > max {
-			max = v.Latency
-		}
-	}
-
-	var min int64
-	for i, v := range responses {
-		if i == 0 || v.Latency < min {
-			min = v.Latency
+			stats.Other += count
 		}
 	}
 
 	stats.AverageLatency = totalLatency / int64(len(responses))
-	stats.MaxLatency = max
-	stats.MinLatency = min
 	return &stats
 }
 
 func (stats *HTTPStatistics) String() string {
-	var b bytes.Buffer
+	var builder strings.Builder
 
-	b.WriteString("\n")
-	b.WriteString(fmt.Sprintf("AverageLatency: %dms\n", stats.AverageLatency))
-	b.WriteString(fmt.Sprintf("MaxLatency: %dms\n", stats.MaxLatency))
-	b.WriteString(fmt.Sprintf("MinLatency: %dms\n", stats.MinLatency))
-	b.WriteString("\n")
-	b.WriteString(fmt.Sprintf("Count of 200s: %d\n", stats.Count200))
-	b.WriteString(fmt.Sprintf("Count of 201s: %d\n", stats.Count201))
-	b.WriteString(fmt.Sprintf("Count of 204s: %d\n", stats.Count204))
-	b.WriteString(fmt.Sprintf("Count of 301s: %d\n", stats.Count301))
-	b.WriteString(fmt.Sprintf("Count of 302s: %d\n", stats.Count302))
-	b.WriteString(fmt.Sprintf("Count of 304s: %d\n", stats.Count304))
-	b.WriteString(fmt.Sprintf("Count of 400s: %d\n", stats.Count400))
-	b.WriteString(fmt.Sprintf("Count of 401s: %d\n", stats.Count401))
-	b.WriteString(fmt.Sprintf("Count of 403s: %d\n", stats.Count403))
-	b.WriteString(fmt.Sprintf("Count of 404s: %d\n", stats.Count404))
-	b.WriteString(fmt.Sprintf("Count of 500s: %d\n", stats.Count500))
-	b.WriteString(fmt.Sprintf("Count of 502s: %d\n", stats.Count502))
-	b.WriteString(fmt.Sprintf("Count of 503s: %d\n", stats.Count503))
-	b.WriteString(fmt.Sprintf("Count of 504s: %d\n", stats.Count504))
-	b.WriteString(fmt.Sprintf("Count of others: %d\n", stats.Other))
+	builder.WriteString("\n")
+	builder.WriteString(fmt.Sprintf("AverageLatency: %dms\n", stats.AverageLatency))
+	builder.WriteString(fmt.Sprintf("MaxLatency: %dms\n", stats.MaxLatency))
+	builder.WriteString(fmt.Sprintf("MinLatency: %dms\n", stats.MinLatency))
+	builder.WriteString("\n")
 
-	return b.String()
+	statusCodes := []struct {
+		label string
+		count int
+	}{
+		{"200s", stats.Count200},
+		{"201s", stats.Count201},
+		{"204s", stats.Count204},
+		{"301s", stats.Count301},
+		{"302s", stats.Count302},
+		{"304s", stats.Count304},
+		{"400s", stats.Count400},
+		{"401s", stats.Count401},
+		{"403s", stats.Count403},
+		{"404s", stats.Count404},
+		{"500s", stats.Count500},
+		{"502s", stats.Count502},
+		{"503s", stats.Count503},
+		{"504s", stats.Count504},
+		{"others", stats.Other},
+	}
+
+	for _, sc := range statusCodes {
+		builder.WriteString(fmt.Sprintf("Count of %s: %d\n", sc.label, sc.count))
+	}
+
+	return builder.String()
 }
