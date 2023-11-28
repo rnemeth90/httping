@@ -35,7 +35,6 @@ func init() {
 	pflag.StringVar(&headers, "headers", "", "A comma-separated list of response headers to include in the output.")
 	pflag.IntVar(&count, "count", 4, "Set the number of pings to send. Default is 4.")
 	pflag.Int64Var(&sleep, "sleep", 0, "Set the delay (in seconds) between successive pings. Default is 0 (no delay).")
-	pflag.ErrHelp = nil
 	pflag.Usage = usage
 }
 
