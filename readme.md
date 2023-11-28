@@ -126,6 +126,18 @@ Contributions are welcome! Please read our [contribution](CONTRIBUTING.md) guide
 
 ## To Do
 - [x] Add delay option between pings
+- [x] Improve help messages and usage()
+- [x] Ensure POSIX compliance
+- [x] The current approach of using a goroutine for signal handling can be improved for clarity and control. Consider moving signal handling to the main function or using a context with cancel functionality.
+- [ ] remove 'context canceled' and 'operation cancelled by user' when using SIGTERM
+- [ ] When an error occurs in MakeRequest, it immediately returns from the function. Consider adding logic to handle partial results and provide a summary of successes and failures.
+- [ ] The call to httping.ParseHeader and dereferencing the result (*headerValues) can be optimized. Maybe modify ParseHeader to directly return a string.
+- [ ] The check if ok { tw.Flush() } is done in every iteration. If you are sure that the writer will always be a tabwriter.Writer, this check can be done once before the loop.
+- [ ] The current implementation always sleeps after each request, even if sleep is 0. You can optimize this by adding a conditional check to avoid unnecessary sleeping.
+- [ ] The final statistics and request count are printed at the end of the function. It's good practice to also handle situations where the loop might exit unexpectedly.
+- [ ] Add documentation comments for all exported functions and entities
+- [ ] The time format in the output is hard-coded. Consider making this format configurable via command-line arguments or configuration files.
+- [ ] Add tests. Moving the logic that processes individual responses into a separate function can make it easier to write unit tests.
 
 ## Version History
 * 1.0.0 - Initial Release
