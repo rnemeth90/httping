@@ -1,4 +1,4 @@
-# httping [![build-release-binary](https://github.com/rnemeth90/httping/actions/workflows/build.yaml/badge.svg)](https://github.com/rnemeth90/httping/actions/workflows/build.yaml) [![Go Report Card](https://goreportcard.com/badge/github.com/rnemeth90/httping/)](https://goreportcard.com/report/github.com/rnemeth90/httping/)
+# httping [![build-release-binary](https://github.com/rnemeth90/httping/actions/workflows/build.yaml/badge.svg)](https://github.com/rnemeth90/httping/actions/workflows/build.yaml) [![Go Report Card](https://goreportcard.com/badge/github.com/rnemeth90/httping)](https://goreportcard.com/report/github.com/rnemeth90/httping)
 ## Description
 httping is a simple tool for 'pinging' a web server. You can specify the count of pings, as well as some HTTP headers to return the value of. After all pings have completed, some statistics are printed to stdout.
 
