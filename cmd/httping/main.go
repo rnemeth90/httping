@@ -57,7 +57,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	if len(pflag.Args()) == 0 {
+	if len(pflag.Args()) == 0 && url == "" {
 		usage()
 		os.Exit(0)
 	}

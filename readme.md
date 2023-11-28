@@ -49,6 +49,7 @@ $ httping --url www.google.com --c 100 --headers server
 ```
 
 ### Example Output
+Basic usage:
 ```
 $ httping www.google.com
 Time                            Count   Url                             Result  Time            Headers
@@ -65,6 +66,45 @@ MaxLatency: 312ms
 MinLatency: 171ms
 
 Count of 200s: 4
+Count of 201s: 0
+Count of 204s: 0
+Count of 301s: 0
+Count of 302s: 0
+Count of 304s: 0
+Count of 400s: 0
+Count of 401s: 0
+Count of 403s: 0
+Count of 404s: 0
+Count of 500s: 0
+Count of 502s: 0
+Count of 503s: 0
+Count of 504s: 0
+Count of others: 0
+```
+
+With custom options:
+```
+ $ httping --url www.google.com --count 10 --headers Content-Type,Server
+Time                            Count   Url                             Result  Time            Headers
+-----                           -----   ---                             ------  ----            -------
+[ 2023-11-28T11:48:25-05:00 ]   [ 1 ]   [ https://www.google.com ]      [ 200 ] [ 211ms ]       [  {Content-Type:text/html; charset=ISO-8859-1}  {Server:gws}  ]
+[ 2023-11-28T11:48:25-05:00 ]   [ 2 ]   [ https://www.google.com ]      [ 200 ] [ 182ms ]       [  {Server:gws}  {Content-Type:text/html; charset=ISO-8859-1}  ]
+[ 2023-11-28T11:48:25-05:00 ]   [ 3 ]   [ https://www.google.com ]      [ 200 ] [ 183ms ]       [  {Content-Type:text/html; charset=ISO-8859-1}  {Server:gws}  ]
+[ 2023-11-28T11:48:25-05:00 ]   [ 4 ]   [ https://www.google.com ]      [ 200 ] [ 176ms ]       [  {Content-Type:text/html; charset=ISO-8859-1}  {Server:gws}  ]
+[ 2023-11-28T11:48:25-05:00 ]   [ 5 ]   [ https://www.google.com ]      [ 200 ] [ 189ms ]       [  {Content-Type:text/html; charset=ISO-8859-1}  {Server:gws}  ]
+[ 2023-11-28T11:48:26-05:00 ]   [ 6 ]   [ https://www.google.com ]      [ 200 ] [ 206ms ]       [  {Content-Type:text/html; charset=ISO-8859-1}  {Server:gws}  ]
+[ 2023-11-28T11:48:26-05:00 ]   [ 7 ]   [ https://www.google.com ]      [ 200 ] [ 170ms ]       [  {Content-Type:text/html; charset=ISO-8859-1}  {Server:gws}  ]
+[ 2023-11-28T11:48:26-05:00 ]   [ 8 ]   [ https://www.google.com ]      [ 200 ] [ 171ms ]       [  {Content-Type:text/html; charset=ISO-8859-1}  {Server:gws}  ]
+[ 2023-11-28T11:48:26-05:00 ]   [ 9 ]   [ https://www.google.com ]      [ 200 ] [ 177ms ]       [  {Content-Type:text/html; charset=ISO-8859-1}  {Server:gws}  ]
+[ 2023-11-28T11:48:26-05:00 ]   [ 10 ]  [ https://www.google.com ]      [ 200 ] [ 209ms ]       [  {Content-Type:text/html; charset=ISO-8859-1}  {Server:gws}  ]
+
+Total Requests: 10
+
+AverageLatency: 187ms
+MaxLatency: 211ms
+MinLatency: 170ms
+
+Count of 200s: 10
 Count of 201s: 0
 Count of 204s: 0
 Count of 301s: 0
