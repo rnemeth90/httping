@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -23,29 +24,30 @@ type config struct {
 var (
 	url     string
 	useHTTP bool
-	co      int
+	count   int
 	headers string
 	sleep   int64
 )
 
 func init() {
-	pflag.StringVar(&url, "url", "", "the url to ping")
-	pflag.BoolVar(&useHTTP, "insecure", false, "use http instead of https")
-	pflag.StringVar(&headers, "headers", "", "comma delimited list of response headers to output")
-	pflag.IntVar(&co, "count", 4, "number of pings to send")
-	pflag.Int64Var(&sleep, "sleep", 0, "number of seconds to sleep between requests")
+	pflag.StringVar(&url, "url", "", "Specify the URL to ping. (required)")
+	pflag.BoolVar(&useHTTP, "insecure", false, "Use HTTP instead of HTTPS. By default, HTTPS is used.")
+	pflag.StringVar(&headers, "headers", "", "A comma-separated list of response headers to include in the output.")
+	pflag.IntVar(&count, "count", 4, "Set the number of pings to send. Default is 4.")
+	pflag.Int64Var(&sleep, "sleep", 0, "Set the delay (in seconds) between successive pings. Default is 0 (no delay).")
 	pflag.ErrHelp = nil
 	pflag.Usage = usage
 }
 
 func usage() {
-	fmt.Println(os.Args[0])
-
-	fmt.Println()
-	fmt.Println("Usage:")
-	fmt.Printf("  httping --url www.google.com\n")
-	fmt.Printf("  httping --url www.google.com --sleep 10\n")
-	fmt.Printf("  httping --url www.google.com --c 100 --headers server\n\n")
+	fmt.Println("httping: A tool to 'ping' a web server and display response statistics.")
+	fmt.Println("\nUsage:")
+	fmt.Println("  httping [OPTIONS] --url URL")
+	fmt.Println("\nExamples:")
+	fmt.Println("  httping --url www.google.com")
+	fmt.Println("  httping --url www.google.com --insecure --count 10")
+	fmt.Println("  httping --url www.google.com --count 100 --headers Content-Type,Server")
+	fmt.Println("  httping --url www.google.com --sleep 10")
 
 	fmt.Println("Options:")
 	pflag.PrintDefaults()
@@ -53,6 +55,13 @@ func usage() {
 
 func main() {
 	pflag.Parse()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	if len(pflag.Args()) == 0 {
+		usage()
+		os.Exit(0)
+	}
 
 	osArgFlags := pflag.Args()
 	if len(osArgFlags) > 0 {
@@ -61,61 +70,65 @@ func main() {
 		url = httping.ParseURL(url, useHTTP)
 	}
 
-	c := config{
+	config := config{
 		url:     url,
 		useHTTP: useHTTP,
-		count:   co,
+		count:   count,
 		headers: headers,
 	}
 
+	go func() {
+		osChan := make(chan os.Signal, 1)
+		signal.Notify(osChan, os.Interrupt, syscall.SIGTERM)
+
+		<-osChan
+		cancel()
+	}()
+
 	tw := tabwriter.NewWriter(os.Stdout, 0, 8, 1, '\t', tabwriter.AlignRight)
 
-	if err := run(c, tw); err != nil {
+	if err := run(ctx, config, tw); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func run(c config, writer io.Writer) error {
+func run(ctx context.Context, config config, writer io.Writer) error {
 	var count int
 	var respForStats []*httping.HttpResponse
 
 	// check if the writer is a tabwriter
 	tw, ok := writer.(*tabwriter.Writer)
 
-	// tw := tabwriter.NewWriter(os.Stdout, 0, 8, 1, '\t', tabwriter.AlignRight)
 	fmt.Fprintln(writer, "Time\tCount\tUrl\tResult\tTime\tHeaders")
 	fmt.Fprintln(writer, "-----\t-----\t---\t------\t----\t-------")
 
-	// handle the user terminating prematurely
-	osChan := make(chan os.Signal, 1)
-	signal.Notify(osChan, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-osChan
-		fmt.Println()
-		stats := httping.CalculateStatistics(respForStats)
-		fmt.Printf("Total Requests: %d\n", count)
-		fmt.Println(stats.String())
-		os.Exit(0)
-	}()
+	for i := 1; i <= config.count; i++ {
+		select {
+		case <-ctx.Done():
+			fmt.Println("Operation cancelled by user")
+			stats := httping.CalculateStatistics(respForStats)
+			fmt.Printf("Total Requests: %d\n", count)
+			fmt.Println(stats.String())
+			return ctx.Err()
+		default:
+			response, err := httping.MakeRequest(config.useHTTP, config.url, config.headers)
+			if err != nil {
+				return err
+			}
+			respForStats = append(respForStats, response)
 
-	for i := 1; i <= c.count; i++ {
-		response, err := httping.MakeRequest(c.url, c.headers)
-		if err != nil {
-			return err
+			headerValues := httping.ParseHeader(&response.ResponseHeaders)
+
+			hs := *headerValues
+			fmt.Fprintf(writer, "[ %v ]\t[ %d ]\t[ %s ]\t[ %d ]\t[ %dms ]\t[ %s ]\n", time.Now().Format(time.RFC3339), i, config.url, response.Status, response.Latency, hs)
+			count++
+
+			if ok {
+				tw.Flush()
+			}
+			time.Sleep(time.Second * time.Duration(sleep))
 		}
-		respForStats = append(respForStats, response)
-
-		headerValues := httping.ParseHeader(&response.ResponseHeaders)
-
-		hs := *headerValues
-		fmt.Fprintf(writer, "[ %v ]\t[ %d ]\t[ %s ]\t[ %d ]\t[ %dms ]\t[ %s ]\n", time.Now().Format(time.RFC3339), i, c.url, response.Status, response.Latency, hs)
-		count++
-
-		if ok {
-			tw.Flush()
-		}
-		time.Sleep(time.Second * time.Duration(sleep))
 	}
 
 	stats := httping.CalculateStatistics(respForStats)
