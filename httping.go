@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -14,6 +15,7 @@ type HttpResponse struct {
 	Host            string
 	ResponseHeaders map[string]string
 	Latency         int64
+	Error           string
 }
 
 // HTTPStatistics defines a list of integers for keeping track of the
@@ -66,7 +68,7 @@ func MakeRequest(useHTTP bool, url, headers string) (*HttpResponse, error) {
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, err
+		result.Error = err.Error()
 	}
 
 	req.Header.Add("user-agent", userAgent)
@@ -75,7 +77,7 @@ func MakeRequest(useHTTP bool, url, headers string) (*HttpResponse, error) {
 	response, err := client.Do(req)
 	end := time.Since(start).Milliseconds()
 	if err != nil {
-		return nil, err
+		result.Error = err.Error()
 	}
 
 	defer func() {
@@ -102,7 +104,7 @@ func MakeRequest(useHTTP bool, url, headers string) (*HttpResponse, error) {
 	return result, nil
 }
 
-func ParseHeader(m *map[string]string) *string {
+func ParseHeader(m *map[string]string) string {
 	var result string
 	for k, v := range *m {
 		// just making the output pretty
@@ -112,7 +114,7 @@ func ParseHeader(m *map[string]string) *string {
 			result += fmt.Sprintf(" %s:%s ", k, v)
 		}
 	}
-	return &result
+	return result
 }
 
 func CalculateStatistics(responses []*HttpResponse) *HTTPStatistics {

@@ -19,6 +19,7 @@ type config struct {
 	useHTTP bool
 	count   int
 	headers string
+	sleep   int64
 }
 
 var (
@@ -74,6 +75,7 @@ func main() {
 		useHTTP: useHTTP,
 		count:   count,
 		headers: headers,
+		sleep:   sleep,
 	}
 
 	go func() {
@@ -97,7 +99,8 @@ func run(ctx context.Context, config config, writer io.Writer) error {
 	var respForStats []*httping.HttpResponse
 
 	// check if the writer is a tabwriter
-	tw, ok := writer.(*tabwriter.Writer)
+	tw, isTabWriter := writer.(*tabwriter.Writer)
+	defer tw.Flush()
 
 	fmt.Fprintln(writer, "Time\tCount\tUrl\tResult\tTime\tHeaders")
 	fmt.Fprintln(writer, "-----\t-----\t---\t------\t----\t-------")
@@ -105,7 +108,6 @@ func run(ctx context.Context, config config, writer io.Writer) error {
 	for i := 1; i <= config.count; i++ {
 		select {
 		case <-ctx.Done():
-			fmt.Println("Operation cancelled by user")
 			stats := httping.CalculateStatistics(respForStats)
 			fmt.Printf("Total Requests: %d\n", count)
 			fmt.Println(stats.String())
@@ -115,23 +117,26 @@ func run(ctx context.Context, config config, writer io.Writer) error {
 			if err != nil {
 				return err
 			}
+
 			respForStats = append(respForStats, response)
 
 			headerValues := httping.ParseHeader(&response.ResponseHeaders)
+			fmt.Fprintf(writer, "[ %v ]\t[ %d ]\t[ %s ]\t[ %d ]\t[ %dms ]\t[ %s ]\n", time.Now().Format(time.RFC3339), i, config.url, response.Status, response.Latency, headerValues)
 
-			hs := *headerValues
-			fmt.Fprintf(writer, "[ %v ]\t[ %d ]\t[ %s ]\t[ %d ]\t[ %dms ]\t[ %s ]\n", time.Now().Format(time.RFC3339), i, config.url, response.Status, response.Latency, hs)
 			count++
 
-			if ok {
+			// we flush the tab writer in the loop for scrolling "live" output
+			if isTabWriter {
 				tw.Flush()
 			}
-			time.Sleep(time.Second * time.Duration(sleep))
+
+			if config.sleep != 0 {
+				time.Sleep(time.Second * time.Duration(config.sleep))
+			}
 		}
 	}
 
 	stats := httping.CalculateStatistics(respForStats)
-	fmt.Println()
 	fmt.Printf("Total Requests: %d\n", count)
 	fmt.Println(stats.String())
 	return nil
