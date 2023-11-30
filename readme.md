@@ -141,6 +141,7 @@ Contributions are welcome! Please read our [contribution](CONTRIBUTING.md) guide
 
 ## Version History
 * 1.0.0 - Initial Release
+* 1.1.2 - Fixes, enhancements, refactoring, tests, etc.
 
 ## License
 This project is licensed under the MIT License. See the LICENSE.md file for details.
