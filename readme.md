@@ -134,10 +134,10 @@ Contributions are welcome! Please read our [contribution](CONTRIBUTING.md) guide
 - [x] The call to httping.ParseHeader and dereferencing the result (*headerValues) can be optimized. Maybe modify ParseHeader to directly return a string.
 - [x] The check if ok { tw.Flush() } is done in every iteration. If you are sure that the writer will always be a tabwriter.Writer, this check can be done once before the loop.
 - [x] The current implementation always sleeps after each request, even if sleep is 0. You can optimize this by adding a conditional check to avoid unnecessary sleeping.
-- [ ] The final statistics and request count are printed at the end of the function. It's good practice to also handle situations where the loop might exit unexpectedly.
-- [ ] Add documentation comments for all exported functions and entities
+- [x] The final statistics and request count are printed at the end of the function. It's good practice to also handle situations where the loop might exit unexpectedly.
+- [x] Add documentation comments for all exported functions and entities
 - [ ] The time format in the output is hard-coded. Consider making this format configurable via command-line arguments or configuration files.
-- [ ] Add tests. Moving the logic that processes individual responses into a separate function can make it easier to write unit tests.
+- [x] Add tests. Moving the logic that processes individual responses into a separate function can make it easier to write unit tests.
 
 ## Version History
 * 1.0.0 - Initial Release

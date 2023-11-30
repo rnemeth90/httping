@@ -1,3 +1,5 @@
+// Package httping provides functionality to 'ping' web servers
+// and gather statistics about the responses.
 package httping
 
 import (
@@ -5,11 +7,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 )
 
+// HttpResponse represents the response received from an HTTP request.
+// It includes status code, headers, latency, and any error encountered.
 type HttpResponse struct {
 	Status          int
 	Host            string
@@ -18,9 +21,8 @@ type HttpResponse struct {
 	Error           string
 }
 
-// HTTPStatistics defines a list of integers for keeping track of the
-// total number of HTTP response codes for a given response code. We
-// only account for the most common response codes.
+// HTTPStatistics aggregates statistics about a series of HTTP responses,
+// including counts of different response codes and latency metrics.
 type HTTPStatistics struct {
 	Count200       int
 	Count201       int
@@ -42,7 +44,8 @@ type HTTPStatistics struct {
 	MinLatency     int64
 }
 
-// ParseURL will parse a URL from a string
+// ParseURL prepares the URL for the request. It prefixes the URL with
+// "http://" or "https://" as appropriate based on the useHTTP flag.
 func ParseURL(url string, useHTTP bool) string {
 	if strings.HasPrefix(url, "http") || strings.HasPrefix(url, "https") {
 		return url
@@ -54,7 +57,8 @@ func ParseURL(url string, useHTTP bool) string {
 	return "https://" + url
 }
 
-// MakeRequest performs an HTTP request
+// MakeRequest performs an HTTP GET request to the specified URL.
+// It returns an HttpResponse struct filled with response data.
 func MakeRequest(useHTTP bool, url, headers string) (*HttpResponse, error) {
 	var result *HttpResponse
 	userAgent := "httping"
@@ -104,6 +108,8 @@ func MakeRequest(useHTTP bool, url, headers string) (*HttpResponse, error) {
 	return result, nil
 }
 
+// ParseHeader converts a map of headers into a formatted string.
+// This is typically used for displaying the headers in a readable format.
 func ParseHeader(m *map[string]string) string {
 	var result string
 	for k, v := range *m {
@@ -117,6 +123,8 @@ func ParseHeader(m *map[string]string) string {
 	return result
 }
 
+// CalculateStatistics takes a slice of HttpResponse objects and calculates
+// aggregated statistics about them, returned as an HTTPStatistics struct.
 func CalculateStatistics(responses []*HttpResponse) *HTTPStatistics {
 	var stats HTTPStatistics
 	var totalLatency int64
@@ -163,6 +171,8 @@ func CalculateStatistics(responses []*HttpResponse) *HTTPStatistics {
 	return &stats
 }
 
+// String provides a formatted string representation of HTTPStatistics,
+// making it easy to print the statistics to the console or logs.
 func (stats *HTTPStatistics) String() string {
 	var builder strings.Builder
 

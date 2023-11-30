@@ -58,8 +58,8 @@ func TestParseHeader(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			got := httping.ParseHeader(&test.headers)
 
-			if test.expect != *got {
-				t.Errorf("expected %s\n, got %s\n", test.expect, *got)
+			if test.expect != got {
+				t.Errorf("expected %s\n, got %s\n", test.expect, got)
 			}
 		})
 	}
@@ -138,7 +138,7 @@ func TestMakeRequest(t *testing.T) {
 		Latency:         0,
 	}
 
-	got, err := httping.MakeRequest(server.URL, "host")
+	got, err := httping.MakeRequest(false, server.URL, "host")
 	if err != nil {
 		t.Fatal(err)
 	}
