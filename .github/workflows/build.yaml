@@ -48,7 +48,7 @@ jobs:
         fi
         go mod tidy
         go build -o httping -ldflags "-X main.Version=${GITHUB_REF_NAME} -X main.BuiltBy=github-actions" main.go
-        env GOOS=windows GOARCH=amd64 go build -o httping-win -ldflags "-X main.Version=${GITHUB_REF_NAME} -X main.BuiltBy=github-actions" main.go
+        env GOOS=windows GOARCH=amd64 go build -o httping-win.exe -ldflags "-X main.Version=${GITHUB_REF_NAME} -X main.BuiltBy=github-actions" main.go
         mv httping* builds/
         ls -lisa builds
 
