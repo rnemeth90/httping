@@ -18,19 +18,21 @@ import (
 // It includes the target URL, HTTP/HTTPS usage preference, count of pings,
 // headers to be retrieved, and sleep duration between pings.
 type config struct {
-	url     string
-	useHTTP bool
-	count   int
-	headers string
-	sleep   int64
+	url       string
+	useHTTP   bool
+	count     int
+	headers   string
+	sleep     int64
+	useragent string
 }
 
 var (
-	url     string
-	useHTTP bool
-	count   int
-	headers string
-	sleep   int64
+	url       string
+	useHTTP   bool
+	count     int
+	headers   string
+	sleep     int64
+	useragent string
 )
 
 // init is an initialization function that sets up command-line flags
@@ -41,6 +43,7 @@ func init() {
 	pflag.StringVar(&url, "url", "", "Specify the URL to ping. (required)")
 	pflag.BoolVar(&useHTTP, "insecure", false, "Use HTTP instead of HTTPS. By default, HTTPS is used.")
 	pflag.StringVar(&headers, "headers", "", "A comma-separated list of response headers to include in the output.")
+	pflag.StringVar(&useragent, "user-agent", "", "The user-agent value to include in the request headers.")
 	pflag.IntVar(&count, "count", 4, "Set the number of pings to send. Default is 4.")
 	pflag.Int64Var(&sleep, "sleep", 0, "Set the delay (in seconds) between successive pings. Default is 0 (no delay).")
 	pflag.Usage = usage
@@ -83,11 +86,12 @@ func main() {
 	}
 
 	config := config{
-		url:     url,
-		useHTTP: useHTTP,
-		count:   count,
-		headers: headers,
-		sleep:   sleep,
+		url:       url,
+		useHTTP:   useHTTP,
+		count:     count,
+		headers:   headers,
+		sleep:     sleep,
+		useragent: useragent,
 	}
 
 	go func() {
@@ -107,9 +111,9 @@ func main() {
 }
 
 // run executes the httping process based on the provided configuration and context.
-// It handles pinging the specified URL, collecting response data, and writing the 
-// output to the provided writer. The function respects context cancellation, 
-// allowing for graceful termination. It accumulates statistics throughout the 
+// It handles pinging the specified URL, collecting response data, and writing the
+// output to the provided writer. The function respects context cancellation,
+// allowing for graceful termination. It accumulates statistics throughout the
 // execution and prints a summary at the end or upon early termination.
 func run(ctx context.Context, config config, writer io.Writer) error {
 	var count int
@@ -138,7 +142,7 @@ func run(ctx context.Context, config config, writer io.Writer) error {
 			fmt.Println(stats.String())
 			return ctx.Err()
 		default:
-			response, err := httping.MakeRequest(config.useHTTP, config.url, config.headers)
+			response, err := httping.MakeRequest(config.useHTTP, config.useragent, config.url, config.headers)
 			if err != nil {
 				return err
 			}

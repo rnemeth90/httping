@@ -48,7 +48,8 @@ jobs:
         fi
         go mod tidy
         go build -o httping -ldflags "-X main.Version=${GITHUB_REF_NAME} -X main.BuiltBy=github-actions" main.go
-        mv httping builds/
+        env GOOS=windows GOARCH=amd64 go build -o httping-win -ldflags "-X main.Version=${GITHUB_REF_NAME} -X main.BuiltBy=github-actions" main.go
+        mv httping* builds/
         ls -lisa builds
 
     - name: go test
@@ -94,7 +95,7 @@ jobs:
       with:
         name: ${{ env.GITHUB_REF_NAME }}
         tag: ${{ env.GITHUB_REF_NAME }}
-        artifacts: ./cmd/httping/builds/httping
+        artifacts: ./cmd/httping/builds/httping*
         bodyFile: "body.log"
         token: ${{ secrets.GITHUB_TOKEN }}
         removeArtifacts: true

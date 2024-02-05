@@ -59,9 +59,11 @@ func ParseURL(url string, useHTTP bool) string {
 
 // MakeRequest performs an HTTP GET request to the specified URL.
 // It returns an HttpResponse struct filled with response data.
-func MakeRequest(useHTTP bool, url, headers string) (*HttpResponse, error) {
+func MakeRequest(useHTTP bool, userAgent, url, headers string) (*HttpResponse, error) {
 	var result *HttpResponse
-	userAgent := "httping"
+	if userAgent == "" {
+		userAgent = "httping"
+	}
 
 	tr := &http.Transport{}
 	if !useHTTP {
