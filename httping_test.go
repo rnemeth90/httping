@@ -138,7 +138,7 @@ func TestMakeRequest(t *testing.T) {
 		Latency:         0,
 	}
 
-	got, err := httping.MakeRequest(false, server.URL, "host")
+	got, err := httping.MakeRequest(false, "", server.URL, "host")
 	if err != nil {
 		t.Fatal(err)
 	}
