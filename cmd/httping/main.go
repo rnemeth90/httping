@@ -118,9 +118,10 @@ func main() {
 func run(ctx context.Context, config config, writer io.Writer) error {
 	var count int
 	var respForStats []*httping.HttpResponse
+	var statsPrinted bool // Add this line to track if stats were printed
 
 	defer func() {
-		if len(respForStats) > 0 {
+		if !statsPrinted && len(respForStats) > 0 {
 			stats := httping.CalculateStatistics(respForStats)
 			fmt.Printf("Total Requests: %d\n", count)
 			fmt.Println(stats.String())
@@ -137,9 +138,12 @@ func run(ctx context.Context, config config, writer io.Writer) error {
 	for i := 1; i <= config.count; i++ {
 		select {
 		case <-ctx.Done():
-			stats := httping.CalculateStatistics(respForStats)
-			fmt.Printf("Total Requests: %d\n", count)
-			fmt.Println(stats.String())
+			if !statsPrinted && len(respForStats) > 0 {
+				stats := httping.CalculateStatistics(respForStats)
+				fmt.Printf("Total Requests: %d\n", count)
+				fmt.Println(stats.String())
+				statsPrinted = true
+			}
 			return ctx.Err()
 		default:
 			response, err := httping.MakeRequest(config.useHTTP, config.useragent, config.url, config.headers)
