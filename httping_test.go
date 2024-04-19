@@ -41,10 +41,10 @@ func TestParseHeader(t *testing.T) {
 	}{
 		{name: "ManyHeaders",
 			headers: map[string]string{
-				"host":         "server01",
 				"Content-Type": "application/json",
+				"host":         "server01",
 			},
-			expect: " {host:server01}  {Content-Type:application/json} ",
+			expect: " {Content-Type:application/json}  {host:server01} ",
 		},
 		{name: "OneHeader",
 			headers: map[string]string{
