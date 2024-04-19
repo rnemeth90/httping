@@ -118,7 +118,7 @@ func main() {
 func run(ctx context.Context, config config, writer io.Writer) error {
 	var count int
 	var respForStats []*httping.HttpResponse
-	var statsPrinted bool // Add this line to track if stats were printed
+	var statsPrinted bool
 
 	defer func() {
 		if !statsPrinted && len(respForStats) > 0 {
