@@ -24,7 +24,7 @@ gh_bin=$(which gh)
 if git tag --sort=committerdate | grep -q ^r; then
 
   # get latest semantic version tag, construct patch+1
-  semantic_version=$(git tag --sort=-committerdate | grep ^r | grep -Po 'r[0-9]*.[0-9]*.[0-9]*' | head -n1)
+  semantic_version=$(git tag --sort=-committerdate | grep ^r | grep -o 'r[0-9]*.[0-9]*.[0-9]*' | head -n1)
   [ -n "$semantic_version" ] || {
     echo "ERROR could not find semantic version rX.Y.Z"
     exit 3
@@ -77,7 +77,7 @@ echo "== RELEASE $newtag =================================="
 cat /tmp/$newtag.log
 echo "===================================="
 echo ""
-read -p "Push this new release $newtag [y/n]? " -i y -e answer
+read -p "Push this new release $newtag [y/n]? " -e answer
 if [[ "$answer" == "y" ]]; then
   set -x
   git commit -a -m "changes for new tag $newtag"
