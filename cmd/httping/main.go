@@ -24,6 +24,7 @@ type config struct {
 	headers   string
 	sleep     int64
 	useragent string
+	jwt       string
 }
 
 var (
@@ -33,6 +34,7 @@ var (
 	headers   string
 	sleep     int64
 	useragent string
+	jwt       string
 )
 
 // init is an initialization function that sets up command-line flags
@@ -46,6 +48,7 @@ func init() {
 	pflag.StringVar(&useragent, "user-agent", "", "The user-agent value to include in the request headers.")
 	pflag.IntVar(&count, "count", 4, "Set the number of pings to send. Default is 4.")
 	pflag.Int64Var(&sleep, "sleep", 0, "Set the delay (in seconds) between successive pings. Default is 0 (no delay).")
+	pflag.StringVarP(&jwt, "jwt", "t", "", "Set the JWT token to include in the request headers.")
 	pflag.Usage = usage
 }
 
@@ -92,6 +95,7 @@ func main() {
 		headers:   headers,
 		sleep:     sleep,
 		useragent: useragent,
+		jwt:       jwt,
 	}
 
 	go func() {
@@ -146,19 +150,29 @@ func run(ctx context.Context, config config, writer io.Writer) error {
 			}
 			return ctx.Err()
 		default:
-			response, err := httping.MakeRequest(config.useHTTP, config.useragent, config.url, config.headers)
-			if err != nil {
-				return err
-			}
+			response, _ := httping.MakeRequest(config.useHTTP, config.useragent, config.url, config.headers, config.jwt)
 
+			// Record the response (even if it had an error)
 			respForStats = append(respForStats, response)
 
+			// Print to console regardless of HTTP status
 			headerValues := httping.ParseHeader(&response.ResponseHeaders)
-			fmt.Fprintf(writer, "[ %v ]\t[ %d ]\t[ %s ]\t[ %d ]\t[ %dms ]\t[ %s ]\n", time.Now().Format(time.RFC3339), i, config.url, response.Status, response.Latency, headerValues)
+			status := response.Status
+			errorText := ""
+			if response.Error != "" {
+				errorText = fmt.Sprintf(" [Error: %s]", response.Error)
+			}
 
+			fmt.Fprintf(writer, "[ %v ]\t[ %d ]\t[ %s ]\t[ %d ]\t[ %dms ]\t[ %s%s ]\n",
+				time.Now().Format(time.RFC3339),
+				i,
+				config.url,
+				status,
+				response.Latency,
+				headerValues,
+				errorText,
+			)
 			count++
-
-			// we flush the tab writer in the loop for scrolling "live" output
 			if isTabWriter {
 				tw.Flush()
 			}

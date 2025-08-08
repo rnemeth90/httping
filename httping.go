@@ -59,8 +59,7 @@ func ParseURL(url string, useHTTP bool) string {
 
 // MakeRequest performs an HTTP GET request to the specified URL.
 // It returns an HttpResponse struct filled with response data.
-func MakeRequest(useHTTP bool, userAgent, url, headers string) (*HttpResponse, error) {
-	var result *HttpResponse
+func MakeRequest(useHTTP bool, userAgent, url, headers, jwt string) (*HttpResponse, error) {
 	if userAgent == "" {
 		userAgent = "httping"
 	}
@@ -69,45 +68,47 @@ func MakeRequest(useHTTP bool, userAgent, url, headers string) (*HttpResponse, e
 	if !useHTTP {
 		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: false}
 	}
-
 	client := &http.Client{Transport: tr}
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		result.Error = err.Error()
+		return &HttpResponse{Error: ErrHTTPNewRequest + err.Error()}, err
 	}
-
 	req.Header.Add("user-agent", userAgent)
+	if jwt != "" {
+		req.Header.Add("Authorization", "Bearer "+jwt)
+	}
 
 	start := time.Now()
-	response, err := client.Do(req)
-	end := time.Since(start).Milliseconds()
-	if err != nil {
-		result.Error = err.Error()
-	}
+	resp, err := client.Do(req)
+	latency := time.Since(start).Milliseconds()
 
+	if err != nil {
+		// Network error or timeout
+		return &HttpResponse{
+			Status: 0, // No HTTP response status
+			Error:  ErrHTTPClientDo + err.Error(),
+			Latency: latency,
+		}, err
+	}
 	defer func() {
-		io.Copy(io.Discard, response.Body)
-		response.Body.Close()
+		io.Copy(io.Discard, resp.Body)
+		resp.Body.Close()
 	}()
 
 	h := make(map[string]string)
-	responseHeaders := strings.Split(headers, ",")
-
-	if len(responseHeaders) > 0 {
-		for _, header := range responseHeaders {
-			h[header] = response.Header.Get(header)
+	if headers != "" {
+		for _, header := range strings.Split(headers, ",") {
+			h[strings.TrimSpace(header)] = resp.Header.Get(strings.TrimSpace(header))
 		}
 	}
 
-	result = &HttpResponse{
-		Status:          response.StatusCode,
-		Host:            response.Header.Get("host"),
+	return &HttpResponse{
+		Status:          resp.StatusCode,
+		Host:            resp.Request.Host,
 		ResponseHeaders: h,
-		Latency:         end,
-	}
-
-	return result, nil
+		Latency:         latency,
+	}, nil
 }
 
 // ParseHeader converts a map of headers into a formatted string.
